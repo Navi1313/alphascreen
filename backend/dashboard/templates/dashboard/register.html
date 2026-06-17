@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register — AlphaScreen</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0f172a;
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: radial-gradient(ellipse at 80% 50%, rgba(16,185,129,0.08) 0%, transparent 60%),
+                              radial-gradient(ellipse at 20% 20%, rgba(59,130,246,0.06) 0%, transparent 50%);
+        }
+        .card {
+            background: #1e293b;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 48px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+        .logo h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #10b981, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .logo p { color: #64748b; margin-top: 6px; font-size: 0.9rem; }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px; font-weight: 500; }
+        input {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 13px 16px;
+            color: #f8fafc;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+        input:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
+        .hint { font-size: 0.78rem; color: #475569; margin-top: 5px; }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            font-family: 'Inter', sans-serif;
+            margin-top: 8px;
+        }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(16,185,129,0.35); }
+        .btn:active { transform: translateY(0); }
+        .footer-link {
+            text-align: center;
+            margin-top: 24px;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+        .footer-link a { color: #10b981; text-decoration: none; font-weight: 500; }
+        .footer-link a:hover { text-decoration: underline; }
+        .error {
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #f87171;
+            font-size: 0.875rem;
+            margin-bottom: 20px;
+        }
+        ul.errorlist { list-style: none; }
+        ul.errorlist li { color: #f87171; font-size: 0.8rem; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo">
+            <h1>AlphaScreen</h1>
+            <p>Create your free account</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="error">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" autocomplete="off">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="id_username">Username</label>
+                <input type="text" name="username" id="id_username" placeholder="Choose a username" autofocus required>
+                {{ form.username.errors }}
+            </div>
+            <div class="form-group">
+                <label for="id_password1">Password</label>
+                <input type="password" name="password1" id="id_password1" placeholder="Create a strong password" required>
+                <p class="hint">At least 8 characters, not entirely numeric.</p>
+                {{ form.password1.errors }}
+            </div>
+            <div class="form-group">
+                <label for="id_password2">Confirm Password</label>
+                <input type="password" name="password2" id="id_password2" placeholder="Repeat your password" required>
+                {{ form.password2.errors }}
+            </div>
+            <button type="submit" class="btn">Create Account →</button>
+        </form>
+
+        <div class="footer-link">
+            Already have an account? <a href="/login/">Sign in</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,15 @@
+Django>=5.0,<6.0
+djangorestframework
+psycopg2-binary
+celery
+redis
+channels
+channels-redis
+daphne
+yfinance
+pandas
+numpy
+ta
+python-dotenv
+pytest-django
+pytest-asyncio

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlphaScreen Live Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --green: #10b981;
+            --red: #ef4444;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: var(--accent);
+            margin: 0;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .symbol {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .price {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .change {
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        .up { color: var(--green); background: rgba(16, 185, 129, 0.1); }
+        .down { color: var(--red); background: rgba(239, 68, 68, 0.1); }
+        
+        #status {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div style="display:flex; justify-content:space-between; align-items:center; max-width:1200px; margin:0 auto;">
+            <div>
+                <h1 style="margin:0; font-size:1.8rem; background:linear-gradient(135deg,#3b82f6,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">AlphaScreen</h1>
+                <p style="margin:4px 0 0; color:#64748b; font-size:0.9rem;">Real-Time Stock Screener</p>
+            </div>
+            <div style="display:flex; align-items:center; gap:16px;">
+                <span style="color:#94a3b8; font-size:0.875rem;">👤 {{ user.username }}</span>
+                <a href="/logout/" style="background:#1e293b; border:1px solid rgba(255,255,255,0.1); color:#94a3b8; padding:8px 16px; border-radius:8px; text-decoration:none; font-size:0.875rem; transition:all 0.2s;">Sign Out</a>
+                <a href="/api/v1/rules/" style="background:linear-gradient(135deg,#3b82f6,#2563eb); color:white; padding:8px 16px; border-radius:8px; text-decoration:none; font-size:0.875rem; font-weight:600;">+ New Rule</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="status">Connecting to live feed...</div>
+
+    <div class="grid" id="stock-grid">
+        <!-- Stock cards will appear here -->
+    </div>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        const gridEl = document.getElementById('stock-grid');
+        const stocks = {};
+
+        function connect() {
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const socket = new WebSocket(wsProtocol + '//' + window.location.host + '/ws/prices/');
+
+            socket.onopen = function() {
+                statusEl.innerText = "Connected to live feed.";
+                statusEl.style.color = "var(--green)";
+            };
+
+            socket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                
+                if (data.type === 'connection_established') {
+                    console.log(data.message);
+                    return;
+                }
+
+                // Expecting data format: { symbol: 'RELIANCE.NS', price: 2500.5, change: 1.2 }
+                const { symbol, price, change } = data;
+                
+                if (!stocks[symbol]) {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.id = 'stock-' + symbol.replace('.', '-');
+                    
+                    card.innerHTML = `
+                        <div class="symbol">${symbol}</div>
+                        <div class="price" id="price-${symbol}">₹${price.toFixed(2)}</div>
+                        <div class="change" id="change-${symbol}">0.00%</div>
+                    `;
+                    gridEl.appendChild(card);
+                    stocks[symbol] = true;
+                }
+
+                const priceEl = document.getElementById(`price-${symbol}`);
+                const changeEl = document.getElementById(`change-${symbol}`);
+                
+                priceEl.innerText = `₹${price.toFixed(2)}`;
+                if (change) {
+                    changeEl.innerText = `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
+                    changeEl.className = 'change ' + (change >= 0 ? 'up' : 'down');
+                } else {
+                    changeEl.style.display = 'none'; // if change is not passed by our script
+                }
+                
+                // Add flash animation
+                const cardEl = document.getElementById('stock-' + symbol.replace('.', '-'));
+                cardEl.style.backgroundColor = change >= 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)';
+                setTimeout(() => {
+                    cardEl.style.backgroundColor = 'var(--card-bg)';
+                }, 300);
+            };
+
+            socket.onclose = function() {
+                statusEl.innerText = "Disconnected. Auto-reconnecting in 3s...";
+                statusEl.style.color = "var(--red)";
+                setTimeout(function() {
+                    connect(); // Automatically reconnect!
+                }, 3000);
+            };
+        }
+
+        // Start the initial connection
+        connect();
+    </script>
+</body>
+</html>

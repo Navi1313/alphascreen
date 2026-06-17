@@ -1,0 +1,78 @@
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: alphascreen_db
+      POSTGRES_USER: alpha_user
+      POSTGRES_PASSWORD: alpha_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    command: redis-server --tcp-keepalive 60 --timeout 0
+    ports:
+      - "6379:6379"
+
+  web:
+    build: ./backend
+    command: daphne -b 0.0.0.0 -p 8000 config.asgi:application
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_NAME=alphascreen_db
+      - DB_USER=alpha_user
+      - DB_PASSWORD=alpha_password
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/1
+    depends_on:
+      - db
+      - redis
+
+  celery:
+    build: ./backend
+    command: celery -A config worker -l info
+    volumes:
+      - ./backend:/app
+    environment:
+      - DB_NAME=alphascreen_db
+      - DB_USER=alpha_user
+      - DB_PASSWORD=alpha_password
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/1
+    depends_on:
+      - db
+      - redis
+      - web
+
+  celery-beat:
+    build: ./backend
+    command: celery -A config beat -l info
+    volumes:
+      - ./backend:/app
+    environment:
+      - DB_NAME=alphascreen_db
+      - DB_USER=alpha_user
+      - DB_PASSWORD=alpha_password
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_BROKER_URL=redis://redis:6379/1
+    depends_on:
+      - redis
+      - celery
+
+volumes:
+  postgres_data:
